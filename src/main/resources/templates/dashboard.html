@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - App Banca</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" th:href="@{/css/app-theme.css}">
+</head>
+<body class="app-background">
+    <!-- Vista principal con contenido dinamico segun rol -->
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="#">🏦 App Banca</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/dashboard">
+                            <i class="bi bi-house-door"></i> Inicio
+                        </a>
+                    </li>
+                    <li class="nav-item" th:if="${isUser}">
+                        <a class="nav-link" href="/transfer">
+                            <i class="bi bi-arrow-left-right"></i> Transferir
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <form th:action="@{/logout}" method="post" class="d-inline">
+                            <button type="submit" class="btn btn-link nav-link text-white">
+                                <i class="bi bi-box-arrow-right"></i> Salir
+                            </button>
+                        </form>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Contenido principal -->
+    <div class="container mb-5 app-page-shell">
+        <!-- Mensaje de éxito -->
+        <div th:if="${success}" class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle-fill"></i>
+            <span th:text="${success}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+
+        <!-- Mensaje de error -->
+        <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+            <span th:text="${error}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+
+        <!-- Bienvenida -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <h2 class="h3 fw-bold">Bienvenido, <span th:text="${usuario.nombreCompleto}"></span></h2>
+                <p class="text-muted">RUT: <span th:text="${usuario.rut}"></span></p>
+            </div>
+        </div>
+
+        <!-- Cards de cuentas (solo usuario) -->
+        <div class="row g-3 mb-4" th:if="${isUser}">
+            <div class="col-12 col-md-6" th:each="cuenta : ${cuentas}">
+                <div class="card shadow-sm h-100 app-surface border-0">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div>
+                                <h5 class="card-title mb-1" th:text="${cuenta.tipo == T(com.banca.app.domain.AccountType).AHORRO ? '💰 Cuenta de Ahorro' : '💳 Cuenta Corriente'}"></h5>
+                                <p class="text-muted small mb-0" th:text="${cuenta.numeroCuenta}"></p>
+                            </div>
+                            <span class="badge" 
+                                  th:classappend="${cuenta.tipo == T(com.banca.app.domain.AccountType).AHORRO ? 'bg-success' : 'bg-primary'}"
+                                  th:text="${cuenta.tipo}">
+                            </span>
+                        </div>
+                        <div class="mt-3">
+                            <p class="text-muted small mb-1">Saldo disponible</p>
+                            <h3 class="h2 fw-bold text-dark mb-0">
+                                $<span th:text="${#numbers.formatDecimal(cuenta.saldo, 0, 'COMMA', 0, 'POINT')}"></span>
+                            </h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Botón de acción -->
+        <div class="row mb-4" th:if="${isUser}">
+            <div class="col-12">
+                <a href="/transfer" class="btn btn-primary btn-lg w-100 w-md-auto">
+                    <i class="bi bi-arrow-left-right"></i> Realizar Transferencia
+                </a>
+            </div>
+        </div>
+
+        <!-- Panel gerente: indicadores -->
+        <div class="row g-3 mb-4" th:if="${isManager}">
+            <div class="col-12 col-md-6 col-xl-3">
+                <div class="card border-0 shadow-sm h-100 app-surface">
+                    <div class="card-body">
+                        <p class="text-muted small mb-2">Total clientes</p>
+                        <h3 class="mb-0 fw-bold" th:text="${managerTotalClientes}">0</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-12 col-md-6 col-xl-3">
+                <div class="card border-0 shadow-sm h-100 app-surface">
+                    <div class="card-body">
+                        <p class="text-muted small mb-2">Saldos del banco</p>
+                        <h3 class="mb-0 fw-bold">$<span th:text="${#numbers.formatDecimal(managerTotalSaldos, 0, 'COMMA', 0, 'POINT')}"></span></h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-12 col-md-6 col-xl-3">
+                <div class="card border-0 shadow-sm h-100 app-surface">
+                    <div class="card-body">
+                        <p class="text-muted small mb-2">Transferencias hoy</p>
+                        <h3 class="mb-0 fw-bold" th:text="${managerTransferenciasHoy}">0</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-12 col-md-6 col-xl-3">
+                <div class="card border-0 shadow-sm h-100 app-surface">
+                    <div class="card-body">
+                        <p class="text-muted small mb-2">Alertas hoy</p>
+                        <h3 class="mb-0 fw-bold text-danger" th:text="${managerAlertasHoy}">0</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Panel gerente: clientes -->
+        <div class="row mb-4" th:if="${isManager}">
+            <div class="col-12">
+                <div class="card shadow-sm app-surface border-0">
+                    <div class="card-header app-surface-strong d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-people"></i> Clientes
+                        </h5>
+                        <small class="text-muted">Vista de supervision</small>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>RUT</th>
+                                        <th>Nombre</th>
+                                        <th class="text-end">Ahorro</th>
+                                        <th class="text-end">Corriente</th>
+                                        <th class="text-end">Saldo Total</th>
+                                        <th>Ultimo movimiento</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:if="${#lists.isEmpty(managerClients)}">
+                                        <td colspan="6" class="text-center text-muted py-4">No hay clientes disponibles</td>
+                                    </tr>
+                                    <tr th:each="c : ${managerClients}">
+                                        <td th:text="${c.rut}"></td>
+                                        <td th:text="${c.nombreCompleto}"></td>
+                                        <td class="text-end">$<span th:text="${#numbers.formatDecimal(c.saldoAhorro, 0, 'COMMA', 0, 'POINT')}"></span></td>
+                                        <td class="text-end">$<span th:text="${#numbers.formatDecimal(c.saldoCorriente, 0, 'COMMA', 0, 'POINT')}"></span></td>
+                                        <td class="text-end fw-bold">$<span th:text="${#numbers.formatDecimal(c.saldoTotal, 0, 'COMMA', 0, 'POINT')}"></span></td>
+                                        <td>
+                                            <span th:if="${c.ultimoMovimiento != null}" th:text="${#temporals.format(c.ultimoMovimiento, 'dd/MM/yyyy HH:mm')}"></span>
+                                            <span th:if="${c.ultimoMovimiento == null}" class="text-muted">Sin movimientos</span>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Panel gerente: monitoreo de movimientos -->
+        <div class="row mb-4" th:if="${isManager}">
+            <div class="col-12">
+                <div class="card shadow-sm app-surface border-0">
+                    <div class="card-header app-surface-strong d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-activity"></i> Monitoreo de movimientos
+                        </h5>
+                        <small class="text-muted">Riesgo alto desde $<span th:text="${#numbers.formatDecimal(managerHighAmountThreshold, 0, 'COMMA', 0, 'POINT')}"></span></small>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Fecha</th>
+                                        <th>Cliente</th>
+                                        <th>Cuenta</th>
+                                        <th>Descripcion</th>
+                                        <th class="text-end">Monto</th>
+                                        <th>Riesgo</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:if="${#lists.isEmpty(managerRecentMovements)}">
+                                        <td colspan="6" class="text-center text-muted py-4">No hay movimientos recientes</td>
+                                    </tr>
+                                    <tr th:each="m : ${managerRecentMovements}">
+                                        <td class="text-nowrap" th:text="${#temporals.format(m.fecha, 'dd/MM/yyyy HH:mm')}"></td>
+                                        <td>
+                                            <span th:text="${m.clienteNombre}"></span>
+                                            <br>
+                                            <small class="text-muted" th:text="${m.clienteRut}"></small>
+                                        </td>
+                                        <td><small th:text="${m.numeroCuenta}"></small></td>
+                                        <td th:text="${m.descripcion}"></td>
+                                        <td class="text-end fw-bold" th:classappend="${m.monto >= 0 ? 'text-success' : 'text-danger'}">
+                                            <span th:text="${m.monto >= 0 ? '+' : ''}"></span>$<span th:text="${#numbers.formatDecimal(m.monto, 0, 'COMMA', 0, 'POINT')}"></span>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-danger" th:if="${m.riesgoAlto}">Alto</span>
+                                            <span class="badge bg-success" th:if="${!m.riesgoAlto}">Normal</span>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Panel admin: crear usuario -->
+        <div class="row mb-4" th:if="${isAdmin}">
+            <div class="col-12">
+                <div class="card border-warning shadow-sm app-surface">
+                    <div class="card-header bg-warning-subtle">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-person-plus-fill"></i> Administracion: Crear Usuario
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <form th:action="@{/admin/users}" th:object="${createUserRequest}" method="post" class="row g-3">
+                            <div class="col-12 col-md-4">
+                                <label for="rut" class="form-label">RUT</label>
+                                <input id="rut" type="text" class="form-control" th:field="*{rut}" placeholder="11.111.111-1" required>
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <label for="nombreCompleto" class="form-label">Nombre completo</label>
+                                <input id="nombreCompleto" type="text" class="form-control" th:field="*{nombreCompleto}" placeholder="Nombre Apellido" required>
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <label for="password" class="form-label">Contrasena inicial</label>
+                                <input id="password" type="password" class="form-control" th:field="*{password}" placeholder="Minimo recomendado: 8 caracteres" required>
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <label for="role" class="form-label">Rol</label>
+                                <select id="role" class="form-select" th:field="*{role}" required>
+                                    <option th:each="r : ${adminRoles}" th:value="${r}" th:text="${r}"></option>
+                                </select>
+                            </div>
+                            <div class="col-12 d-flex justify-content-end">
+                                <button type="submit" class="btn btn-warning">
+                                    <i class="bi bi-save"></i> Crear usuario
+                                </button>
+                            </div>
+                        </form>
+                        <small class="text-muted d-block mt-2">
+                            Se crean automaticamente cuentas AHORRO y CORRIENTE con saldos iniciales base.
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Panel admin: usuarios del sistema -->
+        <div class="row mb-4" th:if="${isAdmin}">
+            <div class="col-12">
+                <div class="card shadow-sm app-surface border-0">
+                    <div class="card-header app-surface-strong">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-people-fill"></i> Usuarios del Sistema
+                        </h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>RUT</th>
+                                        <th>Nombre</th>
+                                        <th>Rol</th>
+                                        <th class="text-end">Ahorro</th>
+                                        <th class="text-end">Corriente</th>
+                                        <th class="text-end">Saldo Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:if="${#lists.isEmpty(adminUsers)}">
+                                        <td colspan="6" class="text-center text-muted py-4">No hay usuarios registrados</td>
+                                    </tr>
+                                    <tr th:each="u : ${adminUsers}">
+                                        <td th:text="${u.rut}"></td>
+                                        <td th:text="${u.nombreCompleto}"></td>
+                                        <td>
+                                            <span class="badge bg-secondary" th:text="${u.role}"></span>
+                                        </td>
+                                        <td class="text-end">
+                                            $<span th:text="${#numbers.formatDecimal(u.saldoAhorro, 0, 'COMMA', 0, 'POINT')}"></span>
+                                        </td>
+                                        <td class="text-end">
+                                            $<span th:text="${#numbers.formatDecimal(u.saldoCorriente, 0, 'COMMA', 0, 'POINT')}"></span>
+                                        </td>
+                                        <td class="text-end fw-bold">
+                                            $<span th:text="${#numbers.formatDecimal(u.saldoTotal, 0, 'COMMA', 0, 'POINT')}"></span>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabla de movimientos -->
+        <div class="row" th:if="${isUser}">
+            <div class="col-12">
+                <div class="card shadow-sm app-surface border-0">
+                    <div class="card-header app-surface-strong">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-clock-history"></i> Últimos Movimientos
+                        </h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Fecha</th>
+                                        <th>Descripción</th>
+                                        <th class="text-end">Monto</th>
+                                        <th class="text-end">Saldo</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:if="${#lists.isEmpty(movimientos)}">
+                                        <td colspan="4" class="text-center text-muted py-4">
+                                            No hay movimientos registrados
+                                        </td>
+                                    </tr>
+                                    <tr th:each="movimiento : ${movimientos}">
+                                        <td class="text-nowrap">
+                                            <small th:text="${#temporals.format(movimiento.fecha, 'dd/MM/yyyy HH:mm')}"></small>
+                                        </td>
+                                        <td>
+                                            <span th:text="${movimiento.descripcion}"></span>
+                                            <br>
+                                            <small class="text-muted" th:text="${movimiento.cuenta.numeroCuenta}"></small>
+                                        </td>
+                                        <td class="text-end fw-bold" 
+                                            th:classappend="${movimiento.monto >= 0 ? 'text-success' : 'text-danger'}">
+                                            <span th:text="${movimiento.monto >= 0 ? '+' : ''}"></span>$<span th:text="${#numbers.formatDecimal(movimiento.monto, 0, 'COMMA', 0, 'POINT')}"></span>
+                                        </td>
+                                        <td class="text-end">
+                                            $<span th:text="${#numbers.formatDecimal(movimiento.saldoResultante, 0, 'COMMA', 0, 'POINT')}"></span>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

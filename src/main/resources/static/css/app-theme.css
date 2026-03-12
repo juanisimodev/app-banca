@@ -1,0 +1,41 @@
+/* Tema visual compartido para vistas HTML de App Banca. */
+
+:root {
+    --app-bg-overlay: rgba(235, 244, 248, 0.42);
+    --app-surface: rgba(255, 255, 255, 0.82);
+    --app-surface-strong: rgba(255, 255, 255, 0.9);
+    --app-backdrop-blur: 10px;
+}
+
+body.app-background {
+    min-height: 100vh;
+    background-image:
+        linear-gradient(var(--app-bg-overlay), var(--app-bg-overlay)),
+        url('/images/criptoblue.jpg');
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-attachment: fixed;
+}
+
+.app-surface {
+    background-color: var(--app-surface);
+    backdrop-filter: blur(var(--app-backdrop-blur));
+    -webkit-backdrop-filter: blur(var(--app-backdrop-blur));
+}
+
+.app-surface-strong {
+    background-color: var(--app-surface-strong);
+    backdrop-filter: blur(var(--app-backdrop-blur));
+    -webkit-backdrop-filter: blur(var(--app-backdrop-blur));
+}
+
+.app-page-shell {
+    min-height: 100vh;
+}
+
+@media (max-width: 991.98px) {
+    body.app-background {
+        background-attachment: scroll;
+    }
+}
